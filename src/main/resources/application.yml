@@ -18,6 +18,14 @@ spring:
     ansi:
       enabled: always
 
+polling:
+  enabled: false
+  payouter:
+    url: http://payouter:8022/repo
+    delay: 10000
+    retryDelay: 1000
+    maxPoolSize: 1
+
 info:
   version: '@project.version@'
   stage: dev
