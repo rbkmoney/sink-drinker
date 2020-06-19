@@ -35,9 +35,9 @@ spring:
     password: changeit
 
 kafka:
-  bootstrap-servers: "localhost:9092"
+  bootstrap-servers: localhost:9092
   topic:
-    payouts: changeit
+    payout: changeit
   ssl:
     enabled: false
     trust-store-type: PKCS12

@@ -12,7 +12,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class PayoutService {
+public class PayoutEventService implements EventService<Event> {
 
     private final KafkaSender kafkaSender;
     private final LastEventRepository lastEventRepository;
@@ -20,14 +20,16 @@ public class PayoutService {
     @Value("${polling.payouter.sink-id}")
     private String payouterSinkId;
 
-    @Value("${kafka.topic.payouts}")
-    private String payoutsKafkaTopic;
+    @Value("${kafka.topic.payout}")
+    private String payoutKafkaTopic;
 
+    @Override
     public void handleEvent(Event event) {
-        long eventId = kafkaSender.send(payoutsKafkaTopic, event);
+        long eventId = kafkaSender.send(payoutKafkaTopic, event);
         lastEventRepository.save(new LastEvent(payouterSinkId, eventId));
     }
 
+    @Override
     public Optional<Long> getLastEventId() {
         return lastEventRepository.findBySinkId(payouterSinkId)
                 .map(LastEvent::getId);

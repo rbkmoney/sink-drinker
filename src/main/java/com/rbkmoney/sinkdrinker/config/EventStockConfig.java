@@ -3,7 +3,7 @@ package com.rbkmoney.sinkdrinker.config;
 import com.rbkmoney.damsel.payout_processing.Event;
 import com.rbkmoney.eventstock.client.EventPublisher;
 import com.rbkmoney.eventstock.client.poll.PollingEventPublisherBuilder;
-import com.rbkmoney.sinkdrinker.handler.PayoutEventStockHandler;
+import com.rbkmoney.sinkdrinker.handler.PayoutEventHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +16,7 @@ public class EventStockConfig {
 
     @Bean
     public EventPublisher<Event> payoutEventPublisher(
-            PayoutEventStockHandler payoutEventStockHandler,
+            PayoutEventHandler payoutEventHandler,
             @Value("${polling.payouter.url}") Resource resource,
             @Value("${polling.payouter.delay}") int pollDelay,
             @Value("${polling.payouter.retryDelay}") int retryDelay,
@@ -25,7 +25,7 @@ public class EventStockConfig {
         return new PollingEventPublisherBuilder()
                 .withURI(resource.getURI())
                 .withPayoutServiceAdapter()
-                .withEventHandler(payoutEventStockHandler)
+                .withEventHandler(payoutEventHandler)
                 .withMaxPoolSize(maxPoolSize)
                 .withEventRetryDelay(retryDelay)
                 .withPollDelay(pollDelay)

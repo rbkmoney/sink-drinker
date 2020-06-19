@@ -6,7 +6,7 @@ import com.rbkmoney.eventstock.client.EventConstraint;
 import com.rbkmoney.eventstock.client.EventPublisher;
 import com.rbkmoney.eventstock.client.SubscriberConfig;
 import com.rbkmoney.eventstock.client.poll.EventFlowFilter;
-import com.rbkmoney.sinkdrinker.service.PayoutService;
+import com.rbkmoney.sinkdrinker.service.PayoutEventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,7 @@ import java.util.Optional;
 public class EventStockPoller {
 
     private final EventPublisher<Event> payoutEventPublisher;
-    private final PayoutService payoutService;
+    private final PayoutEventService payoutEventService;
 
     @Value("${polling.enabled}")
     private boolean isPollingEnabled;
@@ -29,7 +29,7 @@ public class EventStockPoller {
         if (isPollingEnabled) {
             payoutEventPublisher.subscribe(
                     subscriberConfig(
-                            payoutService.getLastEventId()));
+                            payoutEventService.getLastEventId()));
         }
     }
 

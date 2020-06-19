@@ -3,7 +3,7 @@ package com.rbkmoney.sinkdrinker.handler;
 import com.rbkmoney.damsel.payout_processing.Event;
 import com.rbkmoney.eventstock.client.EventAction;
 import com.rbkmoney.eventstock.client.EventHandler;
-import com.rbkmoney.sinkdrinker.service.PayoutService;
+import com.rbkmoney.sinkdrinker.service.PayoutEventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,14 +11,14 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PayoutEventStockHandler implements EventHandler<Event> {
+public class PayoutEventHandler implements EventHandler<Event> {
 
-    private final PayoutService payoutService;
+    private final PayoutEventService payoutEventService;
 
     @Override
     public EventAction handle(Event event, String subsKey) {
         try {
-            payoutService.handleEvent(event);
+            payoutEventService.handleEvent(event);
         } catch (Exception e) {
             log.error("Error when handling payout event with id={}", event.getId(), e);
             return EventAction.DELAYED_RETRY;
