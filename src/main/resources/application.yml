@@ -20,6 +20,8 @@ spring:
 
 kafka:
   bootstrap-servers: "localhost:9092"
+  topic:
+    payouts: changeit
   ssl:
     enabled: false
     trust-store-type: PKCS12

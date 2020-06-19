@@ -1,7 +1,9 @@
 package com.rbkmoney.sinkdrinker.service;
 
 import com.rbkmoney.damsel.payout_processing.Event;
+import com.rbkmoney.sinkdrinker.kafka.KafkaSender;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -10,8 +12,14 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PayoutService {
 
+    private final KafkaSender kafkaSender;
+
+    @Value("${kafka.topic.payouts}")
+    private String payoutsKafkaTopic;
+
     public void handleEvent(Event event) {
-        // TODO [a.romanov]: write to kafka, save last event id
+        String eventId = kafkaSender.send(payoutsKafkaTopic, event);
+        // TODO [a.romanov]: save eventId
     }
 
     public Optional<Long> getLastEventId() {

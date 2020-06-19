@@ -19,8 +19,8 @@ public class PayoutEventStockHandler implements EventHandler<Event> {
     public EventAction handle(Event event, String subsKey) {
         try {
             payoutService.handleEvent(event);
-        } catch (RuntimeException e) {
-            log.error("Error when polling payout event with id={}", event.getId(), e);
+        } catch (Exception e) {
+            log.error("Error when handling payout event with id={}", event.getId(), e);
             return EventAction.DELAYED_RETRY;
         }
 
