@@ -17,6 +17,22 @@ spring:
   output:
     ansi:
       enabled: always
+  jpa:
+    database: postgresql
+    properties:
+      hibernate:
+        default_schema: sink_drinker
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/sink_drinker
+    username: changeit
+    password: changeit
+  flyway:
+    schemas: sink_drinker
+    url: jdbc:postgresql://localhost:5432/sink-drinker
+    user: changeit
+    password: changeit
 
 kafka:
   bootstrap-servers: "localhost:9092"
