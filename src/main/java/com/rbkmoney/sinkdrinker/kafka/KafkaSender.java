@@ -12,9 +12,9 @@ public class KafkaSender {
 
     private final KafkaTemplate<String, TBase> kafkaTemplate;
 
-    public String send(String topic, Event event) {
+    public long send(String topic, Event event) {
         String key = String.valueOf(event.getId());
         kafkaTemplate.send(topic, key, event);
-        return key;
+        return event.getId();
     }
 }

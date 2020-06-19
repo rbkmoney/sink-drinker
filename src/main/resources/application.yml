@@ -51,6 +51,7 @@ kafka:
 polling:
   enabled: false
   payouter:
+    sink-id: payouter
     url: http://payouter:8022/repo
     delay: 10000
     retryDelay: 1000

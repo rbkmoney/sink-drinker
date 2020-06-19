@@ -1,7 +1,9 @@
 package com.rbkmoney.sinkdrinker.service;
 
 import com.rbkmoney.damsel.payout_processing.Event;
+import com.rbkmoney.sinkdrinker.domain.LastEvent;
 import com.rbkmoney.sinkdrinker.kafka.KafkaSender;
+import com.rbkmoney.sinkdrinker.repository.LastEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,17 +15,21 @@ import java.util.Optional;
 public class PayoutService {
 
     private final KafkaSender kafkaSender;
+    private final LastEventRepository lastEventRepository;
+
+    @Value("${polling.payouter.sink-id}")
+    private String payouterSinkId;
 
     @Value("${kafka.topic.payouts}")
     private String payoutsKafkaTopic;
 
     public void handleEvent(Event event) {
-        String eventId = kafkaSender.send(payoutsKafkaTopic, event);
-        // TODO [a.romanov]: save eventId
+        long eventId = kafkaSender.send(payoutsKafkaTopic, event);
+        lastEventRepository.save(new LastEvent(payouterSinkId, eventId));
     }
 
     public Optional<Long> getLastEventId() {
-        // TODO [a.romanov]: impl
-        return Optional.empty();
+        return lastEventRepository.findBySinkId(payouterSinkId)
+                .map(LastEvent::getId);
     }
 }
