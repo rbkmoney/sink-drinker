@@ -30,6 +30,7 @@ spring:
     password: changeit
   flyway:
     schemas: sink_drinker
+    table: schema_version
     url: jdbc:postgresql://localhost:5432/sink_drinker
     user: changeit
     password: changeit
