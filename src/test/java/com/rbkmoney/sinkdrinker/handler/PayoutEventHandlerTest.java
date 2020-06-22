@@ -127,6 +127,7 @@ public class PayoutEventHandlerTest {
         // Then
         Optional<LastEvent> lastEvent = lastEventRepository.findBySinkId("payouter");
         assertThat(lastEvent).isPresent();
+        assertThat(lastEvent.get().getId()).isEqualTo(2L);
 
         verify(kafkaSender, times(3))
                 .send(eq("payout"), any(Event.class));
