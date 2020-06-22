@@ -5,11 +5,13 @@ import com.rbkmoney.sinkdrinker.domain.LastEvent;
 import com.rbkmoney.sinkdrinker.kafka.KafkaSender;
 import com.rbkmoney.sinkdrinker.repository.LastEventRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PayoutEventService implements EventService<Event> {
@@ -26,7 +28,10 @@ public class PayoutEventService implements EventService<Event> {
     @Override
     public void handleEvent(Event event) {
         long eventId = kafkaSender.send(payoutKafkaTopic, event);
-        lastEventRepository.save(new LastEvent(payouterSinkId, eventId));
+        LastEvent lastEvent = new LastEvent(payouterSinkId, eventId);
+
+        log.debug("Update lastEvent={}", lastEvent);
+        lastEventRepository.save(lastEvent);
     }
 
     @Override

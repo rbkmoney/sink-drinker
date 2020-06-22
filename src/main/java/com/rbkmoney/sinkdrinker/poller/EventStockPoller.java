@@ -8,12 +8,14 @@ import com.rbkmoney.eventstock.client.SubscriberConfig;
 import com.rbkmoney.eventstock.client.poll.EventFlowFilter;
 import com.rbkmoney.sinkdrinker.service.PayoutEventService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EventStockPoller {
@@ -27,13 +29,14 @@ public class EventStockPoller {
     @PostConstruct
     public void subscribe() {
         if (isPollingEnabled) {
-            payoutEventPublisher.subscribe(
-                    subscriberConfig(
-                            payoutEventService.getLastEventId()));
+            Optional<Long> lastEventId = payoutEventService.getLastEventId();
+
+            log.info("Subscribe to PayoutEventPublisher with lastEventId={}", lastEventId);
+            payoutEventPublisher.subscribe(config(lastEventId));
         }
     }
 
-    private SubscriberConfig<Event> subscriberConfig(Optional<Long> lastEventId) {
+    private SubscriberConfig<Event> config(Optional<Long> lastEventId) {
         EventConstraint.EventIDRange eventRange = new EventConstraint.EventIDRange();
         lastEventId.ifPresent(eventRange::setFromExclusive);
 

@@ -17,6 +17,8 @@ public class PayoutEventHandler implements EventHandler<Event> {
 
     @Override
     public EventAction handle(Event event, String subsKey) {
+        log.debug("Handle payout event with id={}", event.getId());
+
         try {
             payoutEventService.handleEvent(event);
         } catch (Exception e) {
