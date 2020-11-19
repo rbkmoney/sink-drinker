@@ -1,6 +1,7 @@
 package com.rbkmoney.sinkdrinker.handler;
 
 import com.rbkmoney.damsel.payout_processing.Event;
+import com.rbkmoney.damsel.payout_processing.EventSource;
 import com.rbkmoney.eventstock.client.EventPublisher;
 import com.rbkmoney.sinkdrinker.SinkDrinkerApplication;
 import com.rbkmoney.sinkdrinker.domain.LastEvent;
@@ -77,7 +78,7 @@ public class PayoutEventHandlerTest {
     @Test
     public void shouldSendEventToKafka() {
         // Given
-        Event event = new Event().setId(1L);
+        Event event = new Event().setId(1L).setSource(EventSource.payout_id("payout_id"));
 
         // When
         payoutEventHandler.handle(event, "_");
@@ -95,7 +96,7 @@ public class PayoutEventHandlerTest {
     public void shouldSendMultipleEventsToKafka() {
         for (long i = 1L; i <= 3L; i++) {
             // Given
-            Event event = new Event().setId(i);
+            Event event = new Event().setId(i).setSource(EventSource.payout_id(String.valueOf(i)));
 
             // When
             payoutEventHandler.handle(event, "_");
@@ -114,11 +115,11 @@ public class PayoutEventHandlerTest {
     public void shouldNotUpdateLastEventOnError() {
         doThrow(new KafkaException("fail"))
                 .when(kafkaSender)
-                .send("payout", new Event().setId(3L));
+                .send("payout", new Event().setId(3L).setSource(EventSource.payout_id("3")));
 
         for (long i = 1L; i <= 3L; i++) {
             // Given
-            Event event = new Event().setId(i);
+            Event event = new Event().setId(i).setSource(EventSource.payout_id(String.valueOf(i)));
 
             // When
             payoutEventHandler.handle(event, "_");

@@ -15,7 +15,7 @@ public class KafkaSender {
     private final KafkaTemplate<String, TBase> kafkaTemplate;
 
     public long send(String topic, Event event) {
-        String key = String.valueOf(event.getId());
+        String key = event.getSource().getPayoutId();
 
         log.debug("Send event with id={} to topic={}", event.getId(), topic);
         kafkaTemplate.send(topic, key, event);
