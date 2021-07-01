@@ -1,6 +1,5 @@
 package com.rbkmoney.sinkdrinker.kafka;
 
-import com.rbkmoney.damsel.payout_processing.Event;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TBase;
@@ -14,11 +13,8 @@ public class KafkaSender {
 
     private final KafkaTemplate<String, TBase> kafkaTemplate;
 
-    public long send(String topic, Event event) {
-        String key = event.getSource().getPayoutId();
-
-        log.debug("Send event with id={} to topic={}", event.getId(), topic);
+    public void send(String topic, String key, TBase event) {
+        log.debug("Send event with id={} to topic={}", key, topic);
         kafkaTemplate.send(topic, key, event);
-        return event.getId();
     }
 }

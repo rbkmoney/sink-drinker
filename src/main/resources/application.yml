@@ -4,12 +4,26 @@ server:
 management:
   security:
     flag: false
+  server:
+    port: '@management.port@'
   metrics:
     export:
       statsd:
-        enabled: false
         flavor: etsy
-  endpoint.health.show-details: always
+        enabled: false
+      prometheus:
+        enabled: false
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
 
 spring:
   application:
@@ -21,24 +35,32 @@ spring:
     database: postgresql
     properties:
       hibernate:
-        default_schema: sink_drinker
+        default_schema: '@db.schema@'
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/sink_drinker
-    username: changeit
-    password: changeit
-  flyway:
-    schemas: sink_drinker
-    table: schema_version
-    url: jdbc:postgresql://localhost:5432/sink_drinker
-    user: changeit
-    password: changeit
+    url: '@db.url@'
+    username: '@db.user@'
+    password: '@db.password@'
+    hikari:
+      idle-timeout: 30000
+      maximum-pool-size: 10
+    flyway:
+      table: schema_version
+      schemas: '@db.schema@'
+
+info:
+  version: '@project.version@'
+  stage: dev
 
 kafka:
   bootstrap-servers: localhost:9092
   topic:
     payout: payout
+    pm-events-payout:
+      name: pm-events-payout
+      produce:
+        enabled: false
   ssl:
     enabled: false
     trust-store-type: PKCS12
@@ -52,12 +74,17 @@ kafka:
 polling:
   enabled: false
   payouter:
-    sink-id: payouter
     url: http://payouter:8022/repo
     delay: 10000
     retryDelay: 1000
     maxPoolSize: 1
 
-info:
-  version: '@project.version@'
-  stage: dev
+last-event:
+  sink-id:
+    damsel-payout: payouter
+    payout-manager: payout-manager
+
+service:
+  partyManagement:
+    url: http://hellgate:8022/v1/processing/partymgmt
+    networkTimeout: 5000

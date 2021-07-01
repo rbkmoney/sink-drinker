@@ -47,11 +47,15 @@ public class KafkaConfig {
     private void configureSsl(Map<String, Object> config, KafkaSslProperties kafkaSslProperties) {
         if (kafkaSslProperties.isEnabled()) {
             config.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, SecurityProtocol.SSL.name());
-            config.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, new File(kafkaSslProperties.getTrustStoreLocation()).getAbsolutePath());
+            config.put(
+                    SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG,
+                    new File(kafkaSslProperties.getTrustStoreLocation()).getAbsolutePath());
             config.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, kafkaSslProperties.getTrustStorePassword());
             config.put(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, kafkaSslProperties.getKeyStoreType());
             config.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, kafkaSslProperties.getTrustStoreType());
-            config.put(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, new File(kafkaSslProperties.getKeyStoreLocation()).getAbsolutePath());
+            config.put(
+                    SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG,
+                    new File(kafkaSslProperties.getKeyStoreLocation()).getAbsolutePath());
             config.put(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, kafkaSslProperties.getKeyStorePassword());
             config.put(SslConfigs.SSL_KEY_PASSWORD_CONFIG, kafkaSslProperties.getKeyPassword());
         }

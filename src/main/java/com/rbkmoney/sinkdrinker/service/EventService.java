@@ -2,9 +2,8 @@ package com.rbkmoney.sinkdrinker.service;
 
 import java.util.Optional;
 
-public interface EventService<TEvent> {
+public interface EventService<T> {
 
-    void handleEvent(TEvent event);
+    void handleEvent(T event);
 
-    Optional<Long> getLastEventId();
 }

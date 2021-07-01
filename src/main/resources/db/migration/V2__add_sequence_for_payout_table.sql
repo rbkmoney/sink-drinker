@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS sink_drinker.sequence_for_payout
+CREATE TABLE sink_drinker.sequence_for_payout
 (
     payout_id   CHARACTER VARYING NOT NULL,
     sequence_id INTEGER           NOT NULL,

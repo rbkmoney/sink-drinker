@@ -16,14 +16,14 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "last_event")
-public class LastEvent implements Serializable {
+@Table(name = "sequence_for_payout")
+public class SequenceForPayout implements Serializable {
 
     @Id
-    @Column(name = "sink_id")
-    private String sinkId;
+    @Column(name = "payout_id")
+    private String payoutId;
 
-    @Column(name = "id")
-    private Long id;
+    @Column(name = "sequence_id")
+    private Integer sequenceId;
 
 }
