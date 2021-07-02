@@ -10,21 +10,38 @@ import java.util.stream.Collectors;
 public class ThriftUtil {
 
     public static List<Event> createEvents(
-            com.rbkmoney.damsel.payout_processing.Event event,
+            com.rbkmoney.damsel.payout_processing.Event damselEvent,
             String payoutId,
             BiFunction<String, Boolean, Integer> sequenceId,
             BiFunction<String, String, String> payoutToolId) {
-        return event.getPayload().getPayoutChanges().stream()
+        return damselEvent.getPayload().getPayoutChanges().stream()
                 .map(payoutChange -> toPayoutManagerPayoutChange(payoutChange, payoutToolId))
                 .map(payoutChange -> new Event()
                         .setPayoutId(payoutId)
                         .setSequenceId(getSequenceId(sequenceId, payoutId, payoutChange))
-                        .setCreatedAt(event.getCreatedAt())
-                        .setPayoutChange(payoutChange))
+                        .setCreatedAt(damselEvent.getCreatedAt())
+                        .setPayoutChange(payoutChange)
+                        /*.setPayout(wqdas)*/)
                 .collect(Collectors.toList());
     }
 
-    private static int getSequenceId(
+    public static Payout toPayoutManagerPayout(
+            com.rbkmoney.damsel.payout_processing.Payout payout,
+            BiFunction<String, String, String> payoutToolId) {
+        return new Payout()
+                .setPayoutId(payout.getId())
+                .setCreatedAt(payout.getCreatedAt())
+                .setPartyId(payout.getPartyId())
+                .setShopId(payout.getShopId())
+                .setStatus(toPayoutManagerPayoutStatus(payout.getStatus()))
+                .setCashFlow(payout.getPayoutFlow())
+                .setPayoutToolId(payoutToolId.apply(payout.getPartyId(), payout.getShopId()))
+                .setAmount(payout.getAmount())
+                .setFee(payout.getFee())
+                .setCurrency(payout.getCurrency());
+    }
+
+    private static Integer getSequenceId(
             BiFunction<String, Boolean, Integer> sequenceId,
             String payoutId,
             PayoutChange payoutChange) {
@@ -53,22 +70,6 @@ public class ThriftUtil {
             default:
                 throw new NotFoundException(String.format("Payout change not found, change = %s", payoutChange));
         }
-    }
-
-    private static Payout toPayoutManagerPayout(
-            com.rbkmoney.damsel.payout_processing.Payout payout,
-            BiFunction<String, String, String> payoutToolId) {
-        return new Payout()
-                .setPayoutId(payout.getId())
-                .setCreatedAt(payout.getCreatedAt())
-                .setPartyId(payout.getPartyId())
-                .setShopId(payout.getShopId())
-                .setStatus(toPayoutManagerPayoutStatus(payout.getStatus()))
-                .setCashFlow(payout.getPayoutFlow())
-                .setPayoutToolId(payoutToolId.apply(payout.getPartyId(), payout.getShopId()))
-                .setAmount(payout.getAmount())
-                .setFee(payout.getFee())
-                .setCurrency(payout.getCurrency());
     }
 
     private static PayoutStatus toPayoutManagerPayoutStatus(

@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface LastEventRepository extends JpaRepository<LastEvent, String> {
 
     Optional<LastEvent> findBySinkId(String sinkId);
+
 }

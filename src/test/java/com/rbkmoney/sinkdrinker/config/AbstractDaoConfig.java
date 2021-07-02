@@ -1,6 +1,18 @@
 package com.rbkmoney.sinkdrinker.config;
 
+import com.rbkmoney.damsel.domain.CashFlowAccount;
+import com.rbkmoney.damsel.domain.CurrencyRef;
+import com.rbkmoney.damsel.domain.FinalCashFlowPosting;
+import com.rbkmoney.damsel.domain.MerchantCashFlowAccount;
+import com.rbkmoney.damsel.payout_processing.*;
+import com.rbkmoney.geck.common.util.TypeUtil;
+import com.rbkmoney.geck.serializer.kit.mock.MockMode;
+import com.rbkmoney.geck.serializer.kit.mock.MockTBaseProcessor;
+import com.rbkmoney.geck.serializer.kit.tbase.TBaseHandler;
 import com.rbkmoney.sinkdrinker.SinkDrinkerApplication;
+import lombok.SneakyThrows;
+import org.apache.thrift.TBase;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -15,7 +27,13 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @ContextConfiguration(classes = SinkDrinkerApplication.class,
@@ -26,10 +44,21 @@ import java.util.UUID;
 public abstract class AbstractDaoConfig {
 
     @Container
-    public static PostgreSQLContainer postgres = new PostgreSQLContainer(DockerImageName.parse("postgres:9.6"));
+    public static PostgreSQLContainer postgres =
+            new PostgreSQLContainer(DockerImageName.parse("postgres:9.6"));
 
     @LocalServerPort
     protected int port;
+
+    private MockTBaseProcessor mockTBaseProcessor;
+
+    @BeforeEach
+    public void setUp() {
+        mockTBaseProcessor = new MockTBaseProcessor(MockMode.ALL, 7, 1);
+        mockTBaseProcessor.addFieldHandler(
+                structHandler -> structHandler.value(Instant.now().toString()),
+                "created_at", "at", "due");
+    }
 
     public static class Initializer extends ConfigDataApplicationContextInitializer {
 
@@ -41,12 +70,66 @@ public abstract class AbstractDaoConfig {
                     "spring.datasource.password=" + postgres.getPassword(),
                     "flyway.url=" + postgres.getJdbcUrl(),
                     "flyway.user=" + postgres.getUsername(),
-                    "flyway.password=" + postgres.getPassword())
+                    "flyway.password=" + postgres.getPassword(),
+                    "polling.enabled=false")
                     .applyTo(configurableApplicationContext);
         }
     }
 
-    public static String generatePayoutId() {
+    public Event damselEvent(String payoutId, long eventId, PayoutChange payoutChange) {
+        return new Event()
+                .setId(eventId)
+                .setCreatedAt(getCreatedAt())
+                .setSource(EventSource.payout_id(payoutId))
+                .setPayload(EventPayload.payout_changes(List.of(payoutChange)));
+    }
+
+    public PayoutChange damselPayoutCreated(String payoutId) {
+        return PayoutChange.payout_created(new PayoutCreated(damselPayout(payoutId)));
+    }
+
+    public Payout damselPayout(String payoutId) {
+        List<FinalCashFlowPosting> finalCashFlowPostings = IntStream.range(0, 5)
+                .mapToObj(i -> fillThrift(new FinalCashFlowPosting(), FinalCashFlowPosting.class))
+                .peek(finalCashFlowPosting -> {
+                    finalCashFlowPosting.getSource().setAccountType(
+                            CashFlowAccount.merchant(MerchantCashFlowAccount.settlement));
+                    finalCashFlowPosting.getDestination().setAccountType(
+                            CashFlowAccount.merchant(MerchantCashFlowAccount.payout));
+                    finalCashFlowPosting.getVolume().setAmount(5L);
+                })
+                .collect(Collectors.toList());
+        PayoutType payoutType = fillThrift(new PayoutType(), PayoutType.class);
+        return new Payout()
+                .setId(payoutId)
+                .setPartyId(payoutId)
+                .setShopId(payoutId)
+                .setContractId(payoutId)
+                .setCreatedAt(getCreatedAt())
+                .setStatus(PayoutStatus.unpaid(new PayoutUnpaid()))
+                .setAmount(1)
+                .setFee(1)
+                .setCurrency(new CurrencyRef("rub"))
+                .setType(payoutType)
+                .setPayoutFlow(finalCashFlowPostings);
+    }
+
+    public PayoutChange damselPayoutStatusPaid() {
+        return PayoutChange.payout_status_changed(
+                new PayoutStatusChanged(
+                        PayoutStatus.paid(new PayoutPaid())));
+    }
+
+    public String getCreatedAt() {
+        return TypeUtil.temporalToString(LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC));
+    }
+
+    public String generatePayoutId() {
         return UUID.randomUUID().toString();
+    }
+
+    @SneakyThrows
+    public <T extends TBase> T fillThrift(T value, Class<T> type) {
+        return mockTBaseProcessor.process(value, new TBaseHandler<>(type));
     }
 }

@@ -17,6 +17,7 @@ public class SequenceForPayoutRepositoryTest extends AbstractDaoConfig {
 
     @Before
     public void setUp() {
+        super.setUp();
         SequenceForPayout trap = new SequenceForPayout("trap", 0);
         sequenceForPayoutRepository.save(trap);
     }
@@ -51,7 +52,7 @@ public class SequenceForPayoutRepositoryTest extends AbstractDaoConfig {
     }
 
     @Test
-    public void shouldNotThrowWhenUpdateDoesNotExist() {
+    public void shouldNotIncrementWhenPayoutNotFound() {
         String payoutId = "payoutId";
         sequenceForPayoutRepository.incrementSequence(payoutId);
         Optional<SequenceForPayout> saved = sequenceForPayoutRepository.findById(payoutId);

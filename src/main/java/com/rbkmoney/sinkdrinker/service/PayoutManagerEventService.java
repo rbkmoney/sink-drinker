@@ -14,10 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PayoutManagerEventService implements EventService<Event> {
 
-    private final KafkaSender kafkaSender;
     private final PartyManagementService partyManagementService;
     private final SequenceForPayoutService sequenceForPayoutService;
     private final LastEventService lastEventService;
+    private final KafkaSender kafkaSender;
 
     @Value("${last-event.sink-id.payout-manager}")
     private String sinkId;

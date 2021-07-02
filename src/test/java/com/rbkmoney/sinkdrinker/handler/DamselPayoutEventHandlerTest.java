@@ -2,7 +2,6 @@ package com.rbkmoney.sinkdrinker.handler;
 
 import com.rbkmoney.damsel.payout_processing.Event;
 import com.rbkmoney.damsel.payout_processing.EventSource;
-import com.rbkmoney.eventstock.client.EventPublisher;
 import com.rbkmoney.sinkdrinker.config.AbstractDaoConfig;
 import com.rbkmoney.sinkdrinker.domain.LastEvent;
 import com.rbkmoney.sinkdrinker.kafka.KafkaSender;
@@ -28,9 +27,6 @@ public class DamselPayoutEventHandlerTest extends AbstractDaoConfig {
 
     @MockBean
     private KafkaSender kafkaSender;
-
-    @MockBean
-    private EventPublisher<Event> payoutEventPublisher;
 
     @Value("${last-event.sink-id.damsel-payout}")
     private String sinkId;
