@@ -9,6 +9,7 @@ import com.rbkmoney.geck.serializer.kit.tbase.TBaseHandler;
 import com.rbkmoney.geck.serializer.kit.tbase.TBaseProcessor;
 import com.rbkmoney.payout.manager.Payout;
 import com.rbkmoney.sinkdrinker.domain.PayoutSnapshot;
+import com.rbkmoney.sinkdrinker.exception.NotFoundException;
 import com.rbkmoney.sinkdrinker.repository.PayoutSnapshotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,18 +32,20 @@ public class PayoutSnapshotService {
 
     public void save(Payout payout) {
         log.debug("Save snapshot payout={}", payout);
-        String cashFlow = convertToJsonCashFlow(payout);
         String snapshot = convertToJsonPayoutSnapshot(payout);
+        String cashFlow = convertToJsonCashFlow(payout);
         PayoutSnapshot payoutSnapshot = new PayoutSnapshot(payout.getPayoutId(), snapshot, cashFlow);
         payoutSnapshotRepository.save(payoutSnapshot);
     }
 
-    public Optional<Payout> get(String payoutId) {
+    public Payout get(String payoutId) {
         log.debug("Get Payout from snapshot payoutId={}", payoutId);
         return payoutSnapshotRepository.findById(payoutId)
                 .map(payoutSnapshot ->
                         convertToThriftPayout(payoutId, payoutSnapshot)
-                                .setCashFlow(convertToThriftCashFlow(payoutId, payoutSnapshot)));
+                                .setCashFlow(convertToThriftCashFlow(payoutId, payoutSnapshot)))
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Payout is null with payoutId=%s", payoutId)));
     }
 
     private Payout convertToThriftPayout(String payoutId, PayoutSnapshot payoutSnapshot) {

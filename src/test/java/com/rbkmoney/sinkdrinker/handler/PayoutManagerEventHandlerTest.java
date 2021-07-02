@@ -1,14 +1,13 @@
 package com.rbkmoney.sinkdrinker.handler;
 
-import com.rbkmoney.damsel.payout_processing.*;
+import com.rbkmoney.damsel.payout_processing.Event;
 import com.rbkmoney.eventstock.client.EventAction;
 import com.rbkmoney.sinkdrinker.config.AbstractDaoConfig;
-import com.rbkmoney.sinkdrinker.domain.LastEvent;
-import com.rbkmoney.sinkdrinker.domain.SequenceForPayout;
 import com.rbkmoney.sinkdrinker.kafka.KafkaSender;
-import com.rbkmoney.sinkdrinker.repository.LastEventRepository;
-import com.rbkmoney.sinkdrinker.repository.SequenceForPayoutRepository;
-import com.rbkmoney.sinkdrinker.service.PartyManagementService;
+import com.rbkmoney.sinkdrinker.service.LastEventService;
+import com.rbkmoney.sinkdrinker.service.PayoutSnapshotService;
+import com.rbkmoney.sinkdrinker.service.SequenceForPayoutService;
+import com.rbkmoney.sinkdrinker.service.ThriftConverter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,16 +33,19 @@ public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
     private PayoutManagerEventHandler payoutManagerEventHandler;
 
     @Autowired
-    private LastEventRepository lastEventRepository;
+    private LastEventService lastEventService;
 
     @Autowired
-    private SequenceForPayoutRepository sequenceForPayoutRepository;
+    private PayoutSnapshotService payoutSnapshotService;
+
+    @Autowired
+    private SequenceForPayoutService sequenceForPayoutService;
+
+    @Autowired
+    private ThriftConverter thriftConverter;
 
     @MockBean
     private KafkaSender kafkaSender;
-
-    @MockBean
-    private PartyManagementService partyManagementService;
 
     @Value("${last-event.sink-id.payout-manager}")
     private String sinkId;
@@ -54,13 +56,17 @@ public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
     @Test
     public void shouldHandleAndSendEventToKafka() {
         String payoutId = generatePayoutId();
-        sequenceForPayoutRepository.save(new SequenceForPayout(payoutId, 0));
+        when(partyManagementService.getPayoutToolId(anyString(), anyString())).thenReturn(payoutId);
+        var payout = thriftConverter.toPayoutManagerPayout(damselPayout(payoutId));
+        payoutSnapshotService.save(payout);
+        when(partyManagementService.getPayoutToolId(anyString(), anyString())).thenReturn(payoutId);
+        sequenceForPayoutService.save(payoutId);
         long eventId = 1L;
         Event event = damselEvent(payoutId, eventId, damselPayoutStatusPaid());
         payoutManagerEventHandler.handle(event, "_");
-        Optional<LastEvent> lastEvent = lastEventRepository.findBySinkId(sinkId);
-        assertThat(lastEvent).isPresent();
-        assertThat(lastEvent.get().getId()).isEqualTo(eventId);
+        Optional<Long> lastEventId = lastEventService.getLastEventId(sinkId);
+        assertThat(lastEventId).isPresent();
+        assertThat(lastEventId.get()).isEqualTo(eventId);
         verify(kafkaSender, only())
                 .send(eq(topicName), eq(payoutId), any(com.rbkmoney.payout.manager.Event.class));
     }
@@ -69,13 +75,15 @@ public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
     public void shouldSendMultipleEventsToKafka() {
         int expected = 3;
         for (int i = 1; i <= expected; i++) {
-            sequenceForPayoutRepository.save(new SequenceForPayout(String.valueOf(i), 0));
-            Event event = damselEvent(String.valueOf(i), i, damselPayoutStatusPaid());
+            String payoutId = String.valueOf(i);
+            when(partyManagementService.getPayoutToolId(anyString(), anyString())).thenReturn(payoutId);
+            sequenceForPayoutService.save(payoutId);
+            Event event = damselEvent(payoutId, i, damselPayoutCreated(payoutId));
             payoutManagerEventHandler.handle(event, "_");
         }
-        Optional<LastEvent> lastEvent = lastEventRepository.findBySinkId(sinkId);
-        assertThat(lastEvent).isPresent();
-        assertThat(lastEvent.get().getId()).isEqualTo(expected);
+        Optional<Long> lastEventId = lastEventService.getLastEventId(sinkId);
+        assertThat(lastEventId).isPresent();
+        assertThat(lastEventId.get()).isEqualTo(expected);
         verify(kafkaSender, times(expected))
                 .send(eq(topicName), anyString(), any(com.rbkmoney.payout.manager.Event.class));
     }
@@ -88,18 +96,16 @@ public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
                         eq(topicName),
                         eq(String.valueOf(expectedThrowValue)),
                         any(com.rbkmoney.payout.manager.Event.class));
-
         for (int i = 1; i <= expectedThrowValue; i++) {
-            sequenceForPayoutRepository.save(new SequenceForPayout(String.valueOf(i), 0));
-            Event event = damselEvent(String.valueOf(i), i, damselPayoutStatusPaid());
+            String payoutId = String.valueOf(i);
+            when(partyManagementService.getPayoutToolId(anyString(), anyString())).thenReturn(payoutId);
+            sequenceForPayoutService.save(payoutId);
+            Event event = damselEvent(payoutId, i, damselPayoutCreated(payoutId));
             payoutManagerEventHandler.handle(event, "_");
         }
-
-        // Then
-        Optional<LastEvent> lastEvent = lastEventRepository.findBySinkId(sinkId);
-        assertThat(lastEvent).isPresent();
-        assertThat(lastEvent.get().getId()).isEqualTo(expectedThrowValue - 1);
-
+        Optional<Long> lastEventId = lastEventService.getLastEventId(sinkId);
+        assertThat(lastEventId).isPresent();
+        assertThat(lastEventId.get()).isEqualTo(expectedThrowValue - 1);
         verify(kafkaSender, times(expectedThrowValue))
                 .send(eq(topicName), anyString(), any(com.rbkmoney.payout.manager.Event.class));
     }
@@ -122,9 +128,9 @@ public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
         long eventId = 1L;
         Event event = damselEvent(payoutId, eventId, damselPayoutCreated(payoutId));
         payoutManagerEventHandler.handle(event, "_");
-        Optional<LastEvent> lastEvent = lastEventRepository.findBySinkId(sinkId);
-        assertThat(lastEvent).isPresent();
-        assertThat(lastEvent.get().getId()).isEqualTo(eventId);
+        Optional<Long> lastEventId = lastEventService.getLastEventId(sinkId);
+        assertThat(lastEventId).isPresent();
+        assertThat(lastEventId.get()).isEqualTo(eventId);
         verify(kafkaSender, only())
                 .send(eq(topicName), eq(payoutId), any(com.rbkmoney.payout.manager.Event.class));
     }
@@ -137,15 +143,15 @@ public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
         long eventId = 1L;
         Event event = damselEvent(payoutId, eventId, damselPayoutCreated(payoutId));
         payoutManagerEventHandler.handle(event, "_");
-        Optional<LastEvent> lastEvent = lastEventRepository.findBySinkId(sinkId);
-        assertThat(lastEvent).isPresent();
-        assertThat(lastEvent.get().getId()).isEqualTo(eventId);
+        Optional<Long> lastEventId = lastEventService.getLastEventId(sinkId);
+        assertThat(lastEventId).isPresent();
+        assertThat(lastEventId.get()).isEqualTo(eventId);
         eventId = 2L;
         event = damselEvent(payoutId, eventId, damselPayoutStatusPaid());
         payoutManagerEventHandler.handle(event, "_");
-        lastEvent = lastEventRepository.findBySinkId(sinkId);
-        assertThat(lastEvent).isPresent();
-        assertThat(lastEvent.get().getId()).isEqualTo(eventId);
+        lastEventId = lastEventService.getLastEventId(sinkId);
+        assertThat(lastEventId).isPresent();
+        assertThat(lastEventId.get()).isEqualTo(eventId);
         verify(kafkaSender, times(2))
                 .send(eq(topicName), eq(payoutId), any(com.rbkmoney.payout.manager.Event.class));
     }

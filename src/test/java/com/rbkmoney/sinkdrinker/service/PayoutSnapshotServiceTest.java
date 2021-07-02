@@ -8,10 +8,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 public class PayoutSnapshotServiceTest extends AbstractDaoConfig {
 
@@ -21,6 +20,9 @@ public class PayoutSnapshotServiceTest extends AbstractDaoConfig {
     @Autowired
     private PayoutSnapshotService payoutSnapshotService;
 
+    @Autowired
+    private ThriftConverter thriftConverter;
+
     @BeforeEach
     public void setUp() {
         super.setUp();
@@ -29,13 +31,12 @@ public class PayoutSnapshotServiceTest extends AbstractDaoConfig {
     }
 
     @Test
-    public void name() {
+    public void shouldSaveAndGet() {
         String payoutId = generatePayoutId();
-        Payout payout = ThriftUtil.toPayoutManagerPayout(damselPayout(payoutId), (partyId, shopId) -> payoutId);
+        when(partyManagementService.getPayoutToolId(anyString(), anyString())).thenReturn(payoutId);
+        Payout payout = thriftConverter.toPayoutManagerPayout(damselPayout(payoutId));
         payoutSnapshotService.save(payout);
-
-        Optional<Payout> saved = payoutSnapshotService.get(payoutId);
-        assertThat(saved).isPresent();
-        assertThat(saved.get()).isEqualTo(payout);
+        Payout saved = payoutSnapshotService.get(payoutId);
+        assertThat(saved).isEqualTo(payout);
     }
 }

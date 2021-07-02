@@ -17,12 +17,12 @@ public class DamselPayoutEventHandler implements EventHandler<Event> {
 
     @Override
     public EventAction handle(Event event, String subsKey) {
-        log.debug("Handle payout event with id={}", event.getId());
+        log.debug("Handle damsel payout event with id={}", event.getId());
 
         try {
             damselPayoutEventService.handleEvent(event);
         } catch (Exception e) {
-            log.error("Error when handling payout event with id={}", event.getId(), e);
+            log.error("Error when handling damsel payout event with id={}", event.getId(), e);
             return EventAction.DELAYED_RETRY;
         }
 

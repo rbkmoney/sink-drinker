@@ -14,7 +14,7 @@ public class KafkaSender {
     private final KafkaTemplate<String, TBase> kafkaTemplate;
 
     public void send(String topic, String key, TBase event) {
-        log.debug("Send event with id={} to topic={}", key, topic);
+        log.info("Send event with id={} to topic={}", key, topic);
         kafkaTemplate.send(topic, key, event);
     }
 }

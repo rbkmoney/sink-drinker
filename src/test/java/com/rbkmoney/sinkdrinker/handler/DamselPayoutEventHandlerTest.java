@@ -3,9 +3,8 @@ package com.rbkmoney.sinkdrinker.handler;
 import com.rbkmoney.damsel.payout_processing.Event;
 import com.rbkmoney.damsel.payout_processing.EventSource;
 import com.rbkmoney.sinkdrinker.config.AbstractDaoConfig;
-import com.rbkmoney.sinkdrinker.domain.LastEvent;
 import com.rbkmoney.sinkdrinker.kafka.KafkaSender;
-import com.rbkmoney.sinkdrinker.repository.LastEventRepository;
+import com.rbkmoney.sinkdrinker.service.LastEventService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +22,7 @@ public class DamselPayoutEventHandlerTest extends AbstractDaoConfig {
     private DamselPayoutEventHandler damselPayoutEventHandler;
 
     @Autowired
-    private LastEventRepository lastEventRepository;
+    private LastEventService lastEventService;
 
     @MockBean
     private KafkaSender kafkaSender;
@@ -40,9 +39,9 @@ public class DamselPayoutEventHandlerTest extends AbstractDaoConfig {
         damselPayoutEventHandler.handle(event, "_");
 
         // Then
-        Optional<LastEvent> lastEvent = lastEventRepository.findBySinkId(sinkId);
-        assertThat(lastEvent).isPresent();
-        assertThat(lastEvent.get().getId()).isEqualTo(1L);
+        Optional<Long> lastEventId = lastEventService.getLastEventId(sinkId);
+        assertThat(lastEventId).isPresent();
+        assertThat(lastEventId.get()).isEqualTo(1L);
 
         verify(kafkaSender, only())
                 .send("payout", "payout_id", event);
@@ -59,9 +58,9 @@ public class DamselPayoutEventHandlerTest extends AbstractDaoConfig {
         }
 
         // Then
-        Optional<LastEvent> lastEvent = lastEventRepository.findBySinkId(sinkId);
-        assertThat(lastEvent).isPresent();
-        assertThat(lastEvent.get().getId()).isEqualTo(3L);
+        Optional<Long> lastEventId = lastEventService.getLastEventId(sinkId);
+        assertThat(lastEventId).isPresent();
+        assertThat(lastEventId.get()).isEqualTo(3L);
 
         verify(kafkaSender, times(3))
                 .send(eq("payout"), any(), any(Event.class));
@@ -83,9 +82,9 @@ public class DamselPayoutEventHandlerTest extends AbstractDaoConfig {
         }
 
         // Then
-        Optional<LastEvent> lastEvent = lastEventRepository.findBySinkId(sinkId);
-        assertThat(lastEvent).isPresent();
-        assertThat(lastEvent.get().getId()).isEqualTo(2L);
+        Optional<Long> lastEventId = lastEventService.getLastEventId(sinkId);
+        assertThat(lastEventId).isPresent();
+        assertThat(lastEventId.get()).isEqualTo(2L);
 
         verify(kafkaSender, times(3))
                 .send(eq("payout"), any(), any(Event.class));

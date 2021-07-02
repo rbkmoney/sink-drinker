@@ -10,12 +10,14 @@ import com.rbkmoney.geck.serializer.kit.mock.MockMode;
 import com.rbkmoney.geck.serializer.kit.mock.MockTBaseProcessor;
 import com.rbkmoney.geck.serializer.kit.tbase.TBaseHandler;
 import com.rbkmoney.sinkdrinker.SinkDrinkerApplication;
+import com.rbkmoney.sinkdrinker.service.PartyManagementService;
 import lombok.SneakyThrows;
 import org.apache.thrift.TBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -50,11 +52,14 @@ public abstract class AbstractDaoConfig {
     @LocalServerPort
     protected int port;
 
+    @MockBean
+    protected PartyManagementService partyManagementService;
+
     private MockTBaseProcessor mockTBaseProcessor;
 
     @BeforeEach
     public void setUp() {
-        mockTBaseProcessor = new MockTBaseProcessor(MockMode.ALL, 7, 1);
+        mockTBaseProcessor = new MockTBaseProcessor(MockMode.ALL, 20, 1);
         mockTBaseProcessor.addFieldHandler(
                 structHandler -> structHandler.value(Instant.now().toString()),
                 "created_at", "at", "due");
@@ -89,7 +94,7 @@ public abstract class AbstractDaoConfig {
     }
 
     public Payout damselPayout(String payoutId) {
-        List<FinalCashFlowPosting> finalCashFlowPostings = IntStream.range(0, 5)
+        List<FinalCashFlowPosting> finalCashFlowPostings = IntStream.range(0, 2)
                 .mapToObj(i -> fillThrift(new FinalCashFlowPosting(), FinalCashFlowPosting.class))
                 .peek(finalCashFlowPosting -> {
                     finalCashFlowPosting.getSource().setAccountType(
@@ -99,7 +104,6 @@ public abstract class AbstractDaoConfig {
                     finalCashFlowPosting.getVolume().setAmount(5L);
                 })
                 .collect(Collectors.toList());
-        PayoutType payoutType = fillThrift(new PayoutType(), PayoutType.class);
         return new Payout()
                 .setId(payoutId)
                 .setPartyId(payoutId)
@@ -110,7 +114,7 @@ public abstract class AbstractDaoConfig {
                 .setAmount(1)
                 .setFee(1)
                 .setCurrency(new CurrencyRef("rub"))
-                .setType(payoutType)
+                .setType(PayoutType.wallet(new Wallet(payoutId)))
                 .setPayoutFlow(finalCashFlowPostings);
     }
 

@@ -6,8 +6,6 @@ import com.rbkmoney.sinkdrinker.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -30,10 +28,10 @@ public class PartyManagementService {
     }
 
     private Party getParty(String partyId) throws NotFoundException {
-        log.info("Trying to get party, partyId='{}'", partyId);
+        log.debug("Trying to get party, partyId='{}'", partyId);
         try {
             Party party = partyManagementClient.get(userInfo, partyId);
-            log.info("Party has been found, partyId='{}'", partyId);
+            log.debug("Party has been found, partyId='{}'", partyId);
             return party;
         } catch (PartyNotFound ex) {
             throw new NotFoundException(

@@ -1,21 +1,12 @@
 package com.rbkmoney.sinkdrinker.service;
 
 import com.rbkmoney.sinkdrinker.config.AbstractDaoConfig;
-import com.rbkmoney.sinkdrinker.domain.SequenceForPayout;
-import com.rbkmoney.sinkdrinker.repository.SequenceForPayoutRepository;
-import org.junit.jupiter.api.BeforeEach;
+import com.rbkmoney.sinkdrinker.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SequenceForPayoutServiceTest extends AbstractDaoConfig {
 
@@ -24,25 +15,26 @@ public class SequenceForPayoutServiceTest extends AbstractDaoConfig {
 
     @Test
     public void testFirstSequence() {
-        assertEquals(
-                0,
-                sequenceForPayoutService.getSequenceId(generatePayoutId(), true));
+        String payoutId = generatePayoutId();
+        sequenceForPayoutService.save(payoutId);
+        assertEquals(0, sequenceForPayoutService.getSequenceId(payoutId));
     }
 
     @Test
     public void shouldNullWhenPayoutNotFound() {
-        assertNull(sequenceForPayoutService.getSequenceId(generatePayoutId(), false));
+        assertThrows(
+                NotFoundException.class,
+                () -> sequenceForPayoutService.getSequenceId(generatePayoutId()));
     }
 
     @Test
     public void shouldIncrementSequence() {
         String payoutId = generatePayoutId();
-        sequenceForPayoutService.getSequenceId(payoutId, true);
-        assertEquals(
-                1,
-                sequenceForPayoutService.getSequenceId(payoutId, false));
-        assertEquals(
-                2,
-                sequenceForPayoutService.getSequenceId(payoutId, false));
+        sequenceForPayoutService.save(payoutId);
+        assertEquals(0, sequenceForPayoutService.getSequenceId(payoutId));
+        sequenceForPayoutService.incrementSequence(payoutId);
+        assertEquals(1, sequenceForPayoutService.getSequenceId(payoutId));
+        sequenceForPayoutService.incrementSequence(payoutId);
+        assertEquals(2, sequenceForPayoutService.getSequenceId(payoutId));
     }
 }

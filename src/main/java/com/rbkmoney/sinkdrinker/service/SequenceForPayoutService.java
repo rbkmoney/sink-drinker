@@ -14,18 +14,19 @@ public class SequenceForPayoutService {
 
     private final SequenceForPayoutRepository sequenceForPayoutRepository;
 
-    public Integer getSequenceId(String payoutId, Boolean isCreatedEvent) {
-        log.debug("Get SequenceId payoutId={}, isCreatedEvent={}", payoutId, isCreatedEvent);
-        if (isCreatedEvent) {
-            SequenceForPayout sequenceForPayout = new SequenceForPayout(payoutId, 0);
-            sequenceForPayoutRepository.save(sequenceForPayout);
-        } else {
-            sequenceForPayoutRepository.incrementSequence(payoutId);
-        }
-        return getSequenceId(payoutId);
+    public void save(String payoutId) {
+        log.debug("Save first SequenceId payoutId={}", payoutId);
+        SequenceForPayout sequenceForPayout = new SequenceForPayout(payoutId, 0);
+        sequenceForPayoutRepository.save(sequenceForPayout);
     }
 
-    private Integer getSequenceId(String payoutId) {
+    public void incrementSequence(String payoutId) {
+        log.debug("Increment SequenceId payoutId={}", payoutId);
+        sequenceForPayoutRepository.incrementSequence(payoutId);
+    }
+
+    public Integer getSequenceId(String payoutId) {
+        log.debug("Get SequenceId payoutId={}", payoutId);
         return sequenceForPayoutRepository.findById(payoutId)
                 .map(SequenceForPayout::getSequenceId)
                 .orElseThrow(() -> new NotFoundException(
