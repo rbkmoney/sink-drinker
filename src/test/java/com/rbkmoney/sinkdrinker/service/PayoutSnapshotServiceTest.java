@@ -15,20 +15,10 @@ import static org.mockito.Mockito.when;
 public class PayoutSnapshotServiceTest extends AbstractDaoConfig {
 
     @Autowired
-    private PayoutSnapshotRepository payoutSnapshotRepository;
-
-    @Autowired
     private PayoutSnapshotService payoutSnapshotService;
 
     @Autowired
     private ThriftConverter thriftConverter;
-
-    @BeforeEach
-    public void setUp() {
-        super.setUp();
-        PayoutSnapshot payoutSnapshot = new PayoutSnapshot("trap", "trap", "trap");
-        payoutSnapshotRepository.save(payoutSnapshot);
-    }
 
     @Test
     public void shouldSaveAndGet() {
