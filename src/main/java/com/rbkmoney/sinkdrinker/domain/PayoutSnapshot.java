@@ -26,7 +26,7 @@ public class PayoutSnapshot implements Serializable {
     @Column(name = "snapshot")
     private String snapshot;
 
-    @Column(name = "cash_flow")
-    private String cashFlow;
+    @Column(name = "sequence_id")
+    private Integer sequenceId;
 
 }

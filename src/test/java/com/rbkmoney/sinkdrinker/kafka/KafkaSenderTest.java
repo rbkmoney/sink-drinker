@@ -2,7 +2,7 @@ package com.rbkmoney.sinkdrinker.kafka;
 
 import com.rbkmoney.payout.manager.Event;
 import com.rbkmoney.sinkdrinker.config.AbstractKafkaConfig;
-import com.rbkmoney.sinkdrinker.service.ThriftConverter;
+import com.rbkmoney.sinkdrinker.service.ThriftEventsService;
 import com.rbkmoney.sinkdrinker.util.PayoutEventDeserializer;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -29,7 +29,7 @@ public class KafkaSenderTest extends AbstractKafkaConfig {
     private KafkaSender kafkaSender;
 
     @Autowired
-    private ThriftConverter thriftConverter;
+    private ThriftEventsService thriftEventsService;
 
     @Test
     public void shouldProduceEvents() {
@@ -41,7 +41,7 @@ public class KafkaSenderTest extends AbstractKafkaConfig {
             when(partyManagementService.getPayoutToolId(anyString(), anyString()))
                     .thenReturn(payoutId);
             var damselEvent = damselEvent(payoutId, eventId, damselPayoutCreated(payoutId));
-            Event event = thriftConverter.createEvents(damselEvent, payoutId).get(0);
+            Event event = thriftEventsService.createEvents(damselEvent, payoutId).get(0);
             kafkaSender.send(topicName, payoutId, event);
         }
         Consumer<String, Event> consumer = createConsumer(PayoutEventDeserializer.class);

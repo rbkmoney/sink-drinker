@@ -1,12 +1,15 @@
 package com.rbkmoney.sinkdrinker.service;
 
 import com.rbkmoney.damsel.domain.Party;
+import com.rbkmoney.damsel.domain.Shop;
 import com.rbkmoney.damsel.payment_processing.*;
 import com.rbkmoney.sinkdrinker.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,12 +22,9 @@ public class PartyManagementService {
 
     public String getPayoutToolId(String partyId, String shopId) {
         Party party = getParty(partyId);
-        String payoutToolId = party.getShops().get(shopId).getPayoutToolId();
-        if (payoutToolId == null) {
-            throw new NotFoundException(
-                    String.format("PayoutToolId is null with partyId=%s, shopId=%s", partyId, shopId));
-        }
-        return payoutToolId;
+        return Optional.ofNullable(party.getShops().get(shopId))
+                .map(Shop::getPayoutToolId)
+                .orElse("-1");
     }
 
     private Party getParty(String partyId) throws NotFoundException {

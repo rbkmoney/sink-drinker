@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PayoutManagerEventService implements EventService<Event> {
 
-    private final ThriftConverter thriftConverter;
+    private final ThriftEventsService thriftEventsService;
     private final LastEventService lastEventService;
     private final KafkaSender kafkaSender;
 
@@ -35,7 +35,7 @@ public class PayoutManagerEventService implements EventService<Event> {
         log.info("Handle payout manager event with id={}, payoutId={}", id, payoutId);
         if (producerEnabled) {
             log.info("Create payout manager events with id={}, payoutId={}", id, payoutId);
-            var events = thriftConverter.createEvents(damselEvent, payoutId);
+            var events = thriftEventsService.createEvents(damselEvent, payoutId);
             for (var event : events) {
                 kafkaSender.send(topicName, payoutId, event);
             }

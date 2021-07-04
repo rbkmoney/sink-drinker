@@ -2,12 +2,13 @@ package com.rbkmoney.sinkdrinker.handler;
 
 import com.rbkmoney.damsel.payout_processing.Event;
 import com.rbkmoney.eventstock.client.EventAction;
+import com.rbkmoney.payout.manager.PayoutPaid;
+import com.rbkmoney.payout.manager.PayoutStatus;
 import com.rbkmoney.sinkdrinker.config.AbstractDaoConfig;
 import com.rbkmoney.sinkdrinker.kafka.KafkaSender;
 import com.rbkmoney.sinkdrinker.service.LastEventService;
 import com.rbkmoney.sinkdrinker.service.PayoutSnapshotService;
-import com.rbkmoney.sinkdrinker.service.SequenceForPayoutService;
-import com.rbkmoney.sinkdrinker.service.ThriftConverter;
+import com.rbkmoney.sinkdrinker.service.ThriftEventsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,10 +40,7 @@ public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
     private PayoutSnapshotService payoutSnapshotService;
 
     @Autowired
-    private SequenceForPayoutService sequenceForPayoutService;
-
-    @Autowired
-    private ThriftConverter thriftConverter;
+    private ThriftEventsService thriftEventsService;
 
     @MockBean
     private KafkaSender kafkaSender;
@@ -57,10 +55,8 @@ public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
     public void shouldHandleAndSendEventToKafka() {
         String payoutId = generatePayoutId();
         when(partyManagementService.getPayoutToolId(anyString(), anyString())).thenReturn(payoutId);
-        var payout = thriftConverter.toPayoutManagerPayout(damselPayout(payoutId));
-        payoutSnapshotService.save(payout);
-        when(partyManagementService.getPayoutToolId(anyString(), anyString())).thenReturn(payoutId);
-        sequenceForPayoutService.save(payoutId);
+        var payout = toPayoutManagerPayout(damselPayout(payoutId));
+        payoutSnapshotService.save(payout, 0);
         long eventId = 1L;
         Event event = damselEvent(payoutId, eventId, damselPayoutStatusPaid());
         payoutManagerEventHandler.handle(event, "_");
@@ -77,7 +73,6 @@ public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
         for (int i = 1; i <= expected; i++) {
             String payoutId = String.valueOf(i);
             when(partyManagementService.getPayoutToolId(anyString(), anyString())).thenReturn(payoutId);
-            sequenceForPayoutService.save(payoutId);
             Event event = damselEvent(payoutId, i, damselPayoutCreated(payoutId));
             payoutManagerEventHandler.handle(event, "_");
         }
@@ -99,7 +94,6 @@ public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
         for (int i = 1; i <= expectedThrowValue; i++) {
             String payoutId = String.valueOf(i);
             when(partyManagementService.getPayoutToolId(anyString(), anyString())).thenReturn(payoutId);
-            sequenceForPayoutService.save(payoutId);
             Event event = damselEvent(payoutId, i, damselPayoutCreated(payoutId));
             payoutManagerEventHandler.handle(event, "_");
         }
@@ -152,6 +146,8 @@ public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
         lastEventId = lastEventService.getLastEventId(sinkId);
         assertThat(lastEventId).isPresent();
         assertThat(lastEventId.get()).isEqualTo(eventId);
+        assertEquals(1, payoutSnapshotService.get(payoutId).getSequenceId());
+        assertEquals(PayoutStatus.paid(new PayoutPaid()), payoutSnapshotService.get(payoutId).getPayout().getStatus());
         verify(kafkaSender, times(2))
                 .send(eq(topicName), eq(payoutId), any(com.rbkmoney.payout.manager.Event.class));
     }

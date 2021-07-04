@@ -18,14 +18,14 @@ public class PayoutSnapshotRepositoryTest extends AbstractDaoConfig {
     @BeforeEach
     public void setUp() {
         super.setUp();
-        PayoutSnapshot payoutSnapshot = new PayoutSnapshot("trap", "trap", "trap");
+        PayoutSnapshot payoutSnapshot = new PayoutSnapshot("trap", "trap", 0);
         payoutSnapshotRepository.save(payoutSnapshot);
     }
 
     @Test
     public void shouldSaveAndGet() {
         String payoutId = generatePayoutId();
-        PayoutSnapshot payoutSnapshot = new PayoutSnapshot(payoutId, payoutId, payoutId);
+        PayoutSnapshot payoutSnapshot = new PayoutSnapshot(payoutId, payoutId, 0);
         payoutSnapshotRepository.save(payoutSnapshot);
         Optional<PayoutSnapshot> saved = payoutSnapshotRepository.findById(payoutId);
         assertThat(saved).isPresent();

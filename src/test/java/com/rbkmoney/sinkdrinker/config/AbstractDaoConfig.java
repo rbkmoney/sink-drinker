@@ -128,6 +128,22 @@ public abstract class AbstractDaoConfig {
         return TypeUtil.temporalToString(LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC));
     }
 
+    public com.rbkmoney.payout.manager.Payout toPayoutManagerPayout(
+            com.rbkmoney.damsel.payout_processing.Payout damselPayout) {
+        return new com.rbkmoney.payout.manager.Payout()
+                .setPayoutId(damselPayout.getId())
+                .setCreatedAt(damselPayout.getCreatedAt())
+                .setPartyId(damselPayout.getPartyId())
+                .setShopId(damselPayout.getShopId())
+                .setStatus(com.rbkmoney.payout.manager.PayoutStatus.unpaid(
+                        new com.rbkmoney.payout.manager.PayoutUnpaid()))
+                .setCashFlow(damselPayout.getPayoutFlow())
+                .setPayoutToolId(damselPayout.getId())
+                .setAmount(damselPayout.getAmount())
+                .setFee(damselPayout.getFee())
+                .setCurrency(damselPayout.getCurrency());
+    }
+
     public String generatePayoutId() {
         return UUID.randomUUID().toString();
     }

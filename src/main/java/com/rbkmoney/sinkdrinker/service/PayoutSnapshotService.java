@@ -2,13 +2,13 @@ package com.rbkmoney.sinkdrinker.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rbkmoney.damsel.domain.FinalCashFlowPosting;
 import com.rbkmoney.geck.serializer.kit.json.JsonHandler;
 import com.rbkmoney.geck.serializer.kit.json.JsonProcessor;
 import com.rbkmoney.geck.serializer.kit.tbase.TBaseHandler;
 import com.rbkmoney.geck.serializer.kit.tbase.TBaseProcessor;
 import com.rbkmoney.payout.manager.Payout;
 import com.rbkmoney.sinkdrinker.domain.PayoutSnapshot;
+import com.rbkmoney.sinkdrinker.dto.PayoutData;
 import com.rbkmoney.sinkdrinker.exception.NotFoundException;
 import com.rbkmoney.sinkdrinker.repository.PayoutSnapshotRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +17,6 @@ import org.apache.thrift.TBase;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,22 +28,22 @@ public class PayoutSnapshotService {
     private final TBaseProcessor thriftBaseProcessor;
     private final JsonProcessor jsonProcessor;
 
-    public void save(Payout payout) {
-        log.debug("Save snapshot payout={}", payout);
+    public void save(Payout payout, Integer sequenceId) {
+        log.debug("Save snapshot, payout={}", payout);
         String snapshot = convertToJsonPayoutSnapshot(payout);
-        String cashFlow = convertToJsonCashFlow(payout);
-        PayoutSnapshot payoutSnapshot = new PayoutSnapshot(payout.getPayoutId(), snapshot, cashFlow);
+        PayoutSnapshot payoutSnapshot = new PayoutSnapshot(payout.getPayoutId(), snapshot, sequenceId);
         payoutSnapshotRepository.save(payoutSnapshot);
     }
 
-    public Payout get(String payoutId) {
+    public PayoutData get(String payoutId) {
         log.debug("Get Payout from snapshot payoutId={}", payoutId);
         return payoutSnapshotRepository.findById(payoutId)
-                .map(payoutSnapshot ->
-                        convertToThriftPayout(payoutId, payoutSnapshot)
-                                .setCashFlow(convertToThriftCashFlow(payoutId, payoutSnapshot)))
+                .map(payoutSnapshot -> new PayoutData(
+                        null,
+                        convertToThriftPayout(payoutId, payoutSnapshot),
+                        payoutSnapshot.getSequenceId()))
                 .orElseThrow(() -> new NotFoundException(
-                        String.format("Payout is null with payoutId=%s", payoutId)));
+                        String.format("Snapshot is null with payoutId=%s", payoutId)));
     }
 
     private Payout convertToThriftPayout(String payoutId, PayoutSnapshot payoutSnapshot) {
@@ -60,48 +58,12 @@ public class PayoutSnapshotService {
         }
     }
 
-    private List<FinalCashFlowPosting> convertToThriftCashFlow(String payoutId, PayoutSnapshot payoutSnapshot) {
-        try {
-            var finalCashFlowPostings = new ArrayList<FinalCashFlowPosting>();
-            for (JsonNode jsonNode : objectMapper.readTree(payoutSnapshot.getCashFlow())) {
-                FinalCashFlowPosting finalCashFlowPosting = jsonToThriftBase(jsonNode, FinalCashFlowPosting.class);
-                finalCashFlowPostings.add(finalCashFlowPosting);
-            }
-            return finalCashFlowPostings;
-        } catch (IOException ex) {
-            throw new RuntimeException(
-                    String.format("Failed to map json content to CashFlow, payoutId='%s'", payoutId),
-                    ex
-            );
-        }
-    }
-
     private String convertToJsonPayoutSnapshot(Payout payout) {
         try {
-            Payout copy = new Payout(payout);
-            copy.setCashFlow(new ArrayList<>());
-            JsonNode jsonNode = thriftBaseToJson(copy);
-            return objectMapper.writeValueAsString(jsonNode);
+            return objectMapper.writeValueAsString(thriftBaseToJson(new Payout(payout)));
         } catch (IOException ex) {
             throw new RuntimeException(
-                    String.format("Failed to map cashFlows content to json, payout='%s'", payout),
-                    ex
-            );
-        }
-    }
-
-    private String convertToJsonCashFlow(Payout payout) {
-        try {
-            var finalCashFlowPostings = payout.getCashFlow();
-            var jsonNodes = new ArrayList<JsonNode>();
-            for (FinalCashFlowPosting finalCashFlowPosting : finalCashFlowPostings) {
-                JsonNode jsonNode = thriftBaseToJson(finalCashFlowPosting);
-                jsonNodes.add(jsonNode);
-            }
-            return objectMapper.writeValueAsString(jsonNodes);
-        } catch (IOException ex) {
-            throw new RuntimeException(
-                    String.format("Failed to map cashFlows content to json, payout='%s'", payout),
+                    String.format("Failed to map Payout content to json, payout='%s'", payout),
                     ex
             );
         }
