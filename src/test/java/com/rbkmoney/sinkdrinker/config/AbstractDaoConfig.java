@@ -73,9 +73,9 @@ public abstract class AbstractDaoConfig {
                     "spring.datasource.url=" + postgres.getJdbcUrl(),
                     "spring.datasource.username=" + postgres.getUsername(),
                     "spring.datasource.password=" + postgres.getPassword(),
-                    "flyway.url=" + postgres.getJdbcUrl(),
-                    "flyway.user=" + postgres.getUsername(),
-                    "flyway.password=" + postgres.getPassword(),
+                    "spring.flyway.url=" + postgres.getJdbcUrl(),
+                    "spring.flyway.user=" + postgres.getUsername(),
+                    "spring.flyway.password=" + postgres.getPassword(),
                     "polling.enabled=false")
                     .applyTo(configurableApplicationContext);
         }
