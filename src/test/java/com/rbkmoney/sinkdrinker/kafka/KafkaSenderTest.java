@@ -3,10 +3,10 @@ package com.rbkmoney.sinkdrinker.kafka;
 import com.rbkmoney.payout.manager.Event;
 import com.rbkmoney.sinkdrinker.service.PartyManagementService;
 import com.rbkmoney.sinkdrinker.service.ThriftEventsService;
+import com.rbkmoney.testcontainers.annotations.KafkaSpringBootTest;
 import com.rbkmoney.testcontainers.annotations.kafka.KafkaTestcontainer;
 import com.rbkmoney.testcontainers.annotations.kafka.config.KafkaConsumer;
 import com.rbkmoney.testcontainers.annotations.postgresql.PostgresqlTestcontainerSingleton;
-import com.rbkmoney.testcontainers.annotations.spring.boot.test.context.KafkaConsumerSpringBootTest;
 import org.junit.jupiter.api.Test;
 import org.rnorth.ducttape.unreliables.Unreliables;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 @KafkaTestcontainer(
         properties = "kafka.topic.pm-events-payout.produce.enabled=true",
         topicsKeys = "kafka.topic.pm-events-payout.name")
-@KafkaConsumerSpringBootTest
+@KafkaSpringBootTest
 public class KafkaSenderTest {
 
     private static final int TIMEOUT = 5;

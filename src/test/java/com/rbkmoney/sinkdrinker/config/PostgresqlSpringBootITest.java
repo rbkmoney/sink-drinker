@@ -1,7 +1,7 @@
 package com.rbkmoney.sinkdrinker.config;
 
+import com.rbkmoney.testcontainers.annotations.DefaultSpringBootTest;
 import com.rbkmoney.testcontainers.annotations.postgresql.PostgresqlTestcontainerSingleton;
-import com.rbkmoney.testcontainers.annotations.spring.boot.test.context.DefaultSpringBootTest;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
