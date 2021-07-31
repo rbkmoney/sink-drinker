@@ -1,4 +1,4 @@
-package com.rbkmoney.sinkdrinker.config;
+package com.rbkmoney.sinkdrinker.util;
 
 import com.rbkmoney.damsel.domain.CashFlowAccount;
 import com.rbkmoney.damsel.domain.CurrencyRef;
@@ -9,25 +9,8 @@ import com.rbkmoney.geck.common.util.TypeUtil;
 import com.rbkmoney.geck.serializer.kit.mock.MockMode;
 import com.rbkmoney.geck.serializer.kit.mock.MockTBaseProcessor;
 import com.rbkmoney.geck.serializer.kit.tbase.TBaseHandler;
-import com.rbkmoney.sinkdrinker.SinkDrinkerApplication;
-import com.rbkmoney.sinkdrinker.service.PartyManagementService;
 import lombok.SneakyThrows;
 import org.apache.thrift.TBase;
-import org.junit.jupiter.api.BeforeEach;
-import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.util.TestPropertyValues;
-import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -37,51 +20,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(classes = SinkDrinkerApplication.class,
-        initializers = AbstractDaoConfig.Initializer.class)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@TestPropertySource("classpath:application.yml")
-@Testcontainers
-public abstract class AbstractDaoConfig {
+public class DamselUtil {
 
-    @Container
-    public static PostgreSQLContainer postgres =
-            new PostgreSQLContainer(DockerImageName.parse("postgres:9.6"));
-
-    @LocalServerPort
-    protected int port;
-
-    @MockBean
-    protected PartyManagementService partyManagementService;
-
-    private MockTBaseProcessor mockTBaseProcessor;
-
-    @BeforeEach
-    public void setUp() {
-        mockTBaseProcessor = new MockTBaseProcessor(MockMode.ALL, 20, 1);
-        mockTBaseProcessor.addFieldHandler(
-                structHandler -> structHandler.value(Instant.now().toString()),
-                "created_at", "at", "due");
-    }
-
-    public static class Initializer extends ConfigDataApplicationContextInitializer {
-
-        @Override
-        public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-            TestPropertyValues.of(
-                    "spring.datasource.url=" + postgres.getJdbcUrl(),
-                    "spring.datasource.username=" + postgres.getUsername(),
-                    "spring.datasource.password=" + postgres.getPassword(),
-                    "spring.flyway.url=" + postgres.getJdbcUrl(),
-                    "spring.flyway.user=" + postgres.getUsername(),
-                    "spring.flyway.password=" + postgres.getPassword(),
-                    "polling.enabled=false")
-                    .applyTo(configurableApplicationContext);
-        }
-    }
-
-    public Event damselEvent(String payoutId, long eventId, PayoutChange payoutChange) {
+    public static Event damselEvent(String payoutId, long eventId, PayoutChange payoutChange) {
         return new Event()
                 .setId(eventId)
                 .setCreatedAt(getCreatedAt())
@@ -89,11 +30,11 @@ public abstract class AbstractDaoConfig {
                 .setPayload(EventPayload.payout_changes(List.of(payoutChange)));
     }
 
-    public PayoutChange damselPayoutCreated(String payoutId) {
+    public static PayoutChange damselPayoutCreated(String payoutId) {
         return PayoutChange.payout_created(new PayoutCreated(damselPayout(payoutId)));
     }
 
-    public Payout damselPayout(String payoutId) {
+    public static Payout damselPayout(String payoutId) {
         List<FinalCashFlowPosting> finalCashFlowPostings = IntStream.range(0, 2)
                 .mapToObj(i -> fillThrift(new FinalCashFlowPosting(), FinalCashFlowPosting.class))
                 .peek(finalCashFlowPosting -> {
@@ -118,17 +59,17 @@ public abstract class AbstractDaoConfig {
                 .setPayoutFlow(finalCashFlowPostings);
     }
 
-    public PayoutChange damselPayoutStatusPaid() {
+    public static PayoutChange damselPayoutStatusPaid() {
         return PayoutChange.payout_status_changed(
                 new PayoutStatusChanged(
                         PayoutStatus.paid(new PayoutPaid())));
     }
 
-    public String getCreatedAt() {
+    public static String getCreatedAt() {
         return TypeUtil.temporalToString(LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC));
     }
 
-    public com.rbkmoney.payout.manager.Payout toPayoutManagerPayout(
+    public static com.rbkmoney.payout.manager.Payout toPayoutManagerPayout(
             com.rbkmoney.damsel.payout_processing.Payout damselPayout) {
         return new com.rbkmoney.payout.manager.Payout()
                 .setPayoutId(damselPayout.getId())
@@ -144,12 +85,16 @@ public abstract class AbstractDaoConfig {
                 .setCurrency(damselPayout.getCurrency());
     }
 
-    public String generatePayoutId() {
+    public static String generatePayoutId() {
         return UUID.randomUUID().toString();
     }
 
     @SneakyThrows
-    public <T extends TBase> T fillThrift(T value, Class<T> type) {
+    public static <T extends TBase> T fillThrift(T value, Class<T> type) {
+        MockTBaseProcessor mockTBaseProcessor = new MockTBaseProcessor(MockMode.REQUIRED_ONLY, 25, 1);
+        mockTBaseProcessor.addFieldHandler(
+                structHandler -> structHandler.value(Instant.now().toString()),
+                "created_at", "at", "due");
         return mockTBaseProcessor.process(value, new TBaseHandler<>(type));
     }
 }

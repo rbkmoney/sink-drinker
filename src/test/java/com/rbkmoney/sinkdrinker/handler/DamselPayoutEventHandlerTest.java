@@ -2,7 +2,7 @@ package com.rbkmoney.sinkdrinker.handler;
 
 import com.rbkmoney.damsel.payout_processing.Event;
 import com.rbkmoney.damsel.payout_processing.EventSource;
-import com.rbkmoney.sinkdrinker.config.AbstractDaoConfig;
+import com.rbkmoney.sinkdrinker.config.PostgresqlSpringBootITest;
 import com.rbkmoney.sinkdrinker.kafka.KafkaSender;
 import com.rbkmoney.sinkdrinker.service.LastEventService;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-public class DamselPayoutEventHandlerTest extends AbstractDaoConfig {
+@PostgresqlSpringBootITest
+public class DamselPayoutEventHandlerTest {
 
     @Autowired
     private DamselPayoutEventHandler damselPayoutEventHandler;

@@ -4,31 +4,31 @@ import com.rbkmoney.damsel.payout_processing.Event;
 import com.rbkmoney.eventstock.client.EventAction;
 import com.rbkmoney.payout.manager.PayoutPaid;
 import com.rbkmoney.payout.manager.PayoutStatus;
-import com.rbkmoney.sinkdrinker.config.AbstractDaoConfig;
 import com.rbkmoney.sinkdrinker.kafka.KafkaSender;
 import com.rbkmoney.sinkdrinker.service.LastEventService;
+import com.rbkmoney.sinkdrinker.service.PartyManagementService;
 import com.rbkmoney.sinkdrinker.service.PayoutSnapshotService;
 import com.rbkmoney.sinkdrinker.service.ThriftEventsService;
+import com.rbkmoney.testcontainers.annotations.postgresql.PostgresqlTestcontainerSingleton;
+import com.rbkmoney.testcontainers.annotations.spring.boot.test.context.DefaultSpringBootTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.kafka.KafkaException;
 
 import java.util.Optional;
 
+import static com.rbkmoney.sinkdrinker.util.DamselUtil.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {
-                "kafka.topic.pm-events-payout.produce.enabled=true"})
-public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
+@PostgresqlTestcontainerSingleton(properties = "kafka.topic.pm-events-payout.produce.enabled=true")
+@DefaultSpringBootTest
+public class PayoutManagerEventHandlerTest {
 
     @Autowired
     private PayoutManagerEventHandler payoutManagerEventHandler;
@@ -44,6 +44,9 @@ public class PayoutManagerEventHandlerTest extends AbstractDaoConfig {
 
     @MockBean
     private KafkaSender kafkaSender;
+
+    @MockBean
+    protected PartyManagementService partyManagementService;
 
     @Value("${last-event.sink-id.payout-manager}")
     private String sinkId;
