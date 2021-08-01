@@ -4,7 +4,7 @@ import com.rbkmoney.payout.manager.Event;
 import com.rbkmoney.sinkdrinker.service.PartyManagementService;
 import com.rbkmoney.sinkdrinker.service.ThriftEventsService;
 import com.rbkmoney.testcontainers.annotations.KafkaSpringBootTest;
-import com.rbkmoney.testcontainers.annotations.kafka.KafkaTestcontainer;
+import com.rbkmoney.testcontainers.annotations.kafka.KafkaTestcontainerSingleton;
 import com.rbkmoney.testcontainers.annotations.kafka.config.KafkaConsumer;
 import com.rbkmoney.testcontainers.annotations.postgresql.PostgresqlTestcontainerSingleton;
 import org.junit.jupiter.api.Disabled;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
 @PostgresqlTestcontainerSingleton
-@KafkaTestcontainer(
+@KafkaTestcontainerSingleton(
         properties = "kafka.topic.pm-events-payout.produce.enabled=true",
         topicsKeys = "kafka.topic.pm-events-payout.name")
 @KafkaSpringBootTest
