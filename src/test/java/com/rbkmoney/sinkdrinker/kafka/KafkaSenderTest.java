@@ -7,7 +7,6 @@ import com.rbkmoney.testcontainers.annotations.KafkaSpringBootTest;
 import com.rbkmoney.testcontainers.annotations.kafka.KafkaTestcontainerSingleton;
 import com.rbkmoney.testcontainers.annotations.kafka.config.KafkaConsumer;
 import com.rbkmoney.testcontainers.annotations.postgresql.PostgresqlTestcontainerSingleton;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.rnorth.ducttape.unreliables.Unreliables;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +29,6 @@ import static org.mockito.Mockito.when;
         properties = "kafka.topic.pm-events-payout.produce.enabled=true",
         topicsKeys = "kafka.topic.pm-events-payout.name")
 @KafkaSpringBootTest
-@Disabled
 public class KafkaSenderTest {
 
     private static final int TIMEOUT = 5;
