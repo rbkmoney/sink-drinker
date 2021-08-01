@@ -6,19 +6,15 @@ import com.rbkmoney.damsel.domain.FinalCashFlowPosting;
 import com.rbkmoney.damsel.domain.MerchantCashFlowAccount;
 import com.rbkmoney.damsel.payout_processing.*;
 import com.rbkmoney.geck.common.util.TypeUtil;
-import com.rbkmoney.geck.serializer.kit.mock.MockMode;
-import com.rbkmoney.geck.serializer.kit.mock.MockTBaseProcessor;
-import com.rbkmoney.geck.serializer.kit.tbase.TBaseHandler;
-import lombok.SneakyThrows;
-import org.apache.thrift.TBase;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static com.rbkmoney.testcontainers.annotations.util.ThriftUtil.fillThriftObject;
 
 public class DamselUtil {
 
@@ -36,7 +32,7 @@ public class DamselUtil {
 
     public static Payout damselPayout(String payoutId) {
         List<FinalCashFlowPosting> finalCashFlowPostings = IntStream.range(0, 2)
-                .mapToObj(i -> fillThrift(new FinalCashFlowPosting(), FinalCashFlowPosting.class))
+                .mapToObj(i -> fillThriftObject(new FinalCashFlowPosting(), FinalCashFlowPosting.class))
                 .peek(finalCashFlowPosting -> {
                     finalCashFlowPosting.getSource().setAccountType(
                             CashFlowAccount.merchant(MerchantCashFlowAccount.settlement));
@@ -87,14 +83,5 @@ public class DamselUtil {
 
     public static String generatePayoutId() {
         return UUID.randomUUID().toString();
-    }
-
-    @SneakyThrows
-    public static <T extends TBase> T fillThrift(T value, Class<T> type) {
-        MockTBaseProcessor mockTBaseProcessor = new MockTBaseProcessor(MockMode.REQUIRED_ONLY, 25, 1);
-        mockTBaseProcessor.addFieldHandler(
-                structHandler -> structHandler.value(Instant.now().toString()),
-                "created_at", "at", "due");
-        return mockTBaseProcessor.process(value, new TBaseHandler<>(type));
     }
 }

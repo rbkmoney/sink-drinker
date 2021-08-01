@@ -1,4 +1,4 @@
-package com.rbkmoney.sinkdrinker.config;
+package com.rbkmoney.sinkdrinker.config.initializer;
 
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.boot.test.util.TestPropertyValues;
